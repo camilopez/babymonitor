@@ -9,9 +9,10 @@
 <body>
     <div class="container">
         <h1>Monitor de Bebé</h1>
-        <div id="video-stream">
-            <img src="{{ url_for('video_feed') }}" alt="Video del bebé">
-        </div>
+        <video autoplay muted id="video-element" style="width: 100%;">
+            <source src="{{ url_for('video_feed') }}" type="multipart/x-mixed-replace; boundary=frame">
+            Tu navegador no soporta la transmisión de video en vivo.
+        </video>
         <div class="controls">
             <button onclick="shutdown()">Apagar</button>
             <button onclick="reboot()">Reiniciar</button>
