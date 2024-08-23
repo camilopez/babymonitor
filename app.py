@@ -4,7 +4,8 @@ import subprocess
 import threading
 import time
 from ap_config import setup_ap, start_ap, stop_ap, check_wifi_connection
-from camera_stream import generate_frames
+from camera_stream import generate_frames, start_camera_stream, stop_camera_stream
+
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -64,4 +65,6 @@ if __name__ == '__main__':
     setup_ap()  # Configurar el punto de acceso
     network_thread = threading.Thread(target=check_and_switch_network)
     network_thread.start()
+    start_camera_stream()  # Iniciar el stream de la cámara
     socketio.run(app, host='0.0.0.0', port=8080, debug=True)
+    stop_camera_stream()  # Detener el stream de la cámara cuando la aplicación se cierre
