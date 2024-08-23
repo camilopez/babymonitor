@@ -15,17 +15,25 @@ def generate_frames():
         '-o', '-'  # Salida a stdout
     ]
     
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
     try:
+        data = b''
         while True:
-            frame = process.stdout.read(100000)  # Ajusta este valor según sea necesario
-            if not frame:
+            chunk = process.stdout.read(4096)  # Leer en bloques de 4096 bytes
+            if not chunk:
                 break
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            data += chunk
+            # Buscamos el delimitador de frame para generar cada imagen completa
+            while b'\xff\xd9' in data:  # Marca de fin de JPEG
+                frame_end = data.index(b'\xff\xd9') + 2
+                frame = data[:frame_end]
+                data = data[frame_end:]
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
     finally:
         process.terminate()
+
 
 def start_camera_stream():
     global camera_thread
