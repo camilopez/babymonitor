@@ -1,0 +1,14 @@
+[Unit]
+Description=Web Portal for Raspberry Pi
+After=network.target
+
+[Service]
+ExecStart=/home/pi/babymonitor/venv/bin/python /home/pi/babymonitor/app.py
+WorkingDirectory=/home/pi/babymonitor
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Bebé</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Monitor de Bebé</h1>
+        <div id="video-stream">
+            <img src="{{ url_for('video_feed') }}" alt="Video del bebé">
+        </div>
+        <div class="controls">
+            <button onclick="shutdown()">Apagar</button>
+            <button onclick="reboot()">Reiniciar</button>
+            <a href="{{ url_for('wifi_config') }}"><button>Configurar WiFi</button></a>
+        </div>
+    </div>
+    <script>
+        function shutdown() {
+            if (confirm('¿Estás seguro de que quieres apagar el monitor?')) {
+                fetch('/shutdown', {method: 'POST'})
+                    .then(response => response.json())
+                    .then(data => alert(data.message));
+            }
+        }
+
+        function reboot() {
+            if (confirm('¿Estás seguro de que quieres reiniciar el monitor?')) {
+                fetch('/reboot', {method: 'POST'})
+                    .then(response => response.json())
+                    .then(data => alert(data.message));
+            }
+        }
+    </script>
+</body>
+</html>
