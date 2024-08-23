@@ -2,8 +2,8 @@ import subprocess
 
 def setup_ap():
     # Configurar interfaz
-    with open('/etc/dhcpcd.conf', 'a') as f:
-        f.write('\ninterface wlan0\nstatic ip_address=192.168.4.1/24\nnohook wpa_supplicant\n')
+    dhcpcd_config = '\ninterface wlan0\nstatic ip_address=192.168.4.1/24\nnohook wpa_supplicant\n'
+    subprocess.run(['sudo', 'bash', '-c', f'echo "{dhcpcd_config}" >> /etc/dhcpcd.conf'], check=True)
 
     # Configurar hostapd
     hostapd_conf = '''
@@ -22,34 +22,31 @@ wpa_key_mgmt=WPA-PSK
 wpa_pairwise=TKIP
 rsn_pairwise=CCMP
 '''
-    with open('/etc/hostapd/hostapd.conf', 'w') as f:
-        f.write(hostapd_conf)
+    subprocess.run(['sudo', 'bash', '-c', f'echo "{hostapd_conf}" > /etc/hostapd/hostapd.conf'], check=True)
 
     # Configurar dnsmasq
     dnsmasq_conf = '''
 interface=wlan0
 dhcp-range=192.168.4.2,192.168.4.20,255.255.255.0,24h
 '''
-    with open('/etc/dnsmasq.conf', 'w') as f:
-        f.write(dnsmasq_conf)
+    subprocess.run(['sudo', 'bash', '-c', f'echo "{dnsmasq_conf}" > /etc/dnsmasq.conf'], check=True)
 
     # Habilitar el enrutamiento IP
-    with open('/etc/sysctl.conf', 'a') as f:
-        f.write('\nnet.ipv4.ip_forward=1\n')
+    subprocess.run(['sudo', 'bash', '-c', 'echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf'], check=True)
 
     # Aplicar cambios
-    subprocess.call(['sudo', 'sysctl', '-p'])
-    subprocess.call(['sudo', 'systemctl', 'unmask', 'hostapd'])
-    subprocess.call(['sudo', 'systemctl', 'enable', 'hostapd'])
-    subprocess.call(['sudo', 'systemctl', 'enable', 'dnsmasq'])
+    subprocess.run(['sudo', 'sysctl', '-p'], check=True)
+    subprocess.run(['sudo', 'systemctl', 'unmask', 'hostapd'], check=True)
+    subprocess.run(['sudo', 'systemctl', 'enable', 'hostapd'], check=True)
+    subprocess.run(['sudo', 'systemctl', 'enable', 'dnsmasq'], check=True)
 
 def start_ap():
-    subprocess.call(['sudo', 'systemctl', 'start', 'hostapd'])
-    subprocess.call(['sudo', 'systemctl', 'start', 'dnsmasq'])
+    subprocess.run(['sudo', 'systemctl', 'start', 'hostapd'], check=True)
+    subprocess.run(['sudo', 'systemctl', 'start', 'dnsmasq'], check=True)
 
 def stop_ap():
-    subprocess.call(['sudo', 'systemctl', 'stop', 'hostapd'])
-    subprocess.call(['sudo', 'systemctl', 'stop', 'dnsmasq'])
+    subprocess.run(['sudo', 'systemctl', 'stop', 'hostapd'], check=True)
+    subprocess.run(['sudo', 'systemctl', 'stop', 'dnsmasq'], check=True)
 
 def check_wifi_connection():
     try:
