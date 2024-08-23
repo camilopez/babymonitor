@@ -1,16 +1,16 @@
 import io
 import time
-from picamera2 import Picamera2
+import subprocess
 
 def generate_frames():
-    picam2 = Picamera2()
-    picam2.configure(picam2.create_still_configuration(main={"size": (640, 480)}))
-    picam2.start()
-
     while True:
-        stream = io.BytesIO()
-        picam2.capture_file(stream, format='jpeg')
-        stream.seek(0)
+        # Capturar una imagen usando libcamera-still
+        result = subprocess.run(['libcamera-still', '-n', '-o', '-', '-t', '1'], capture_output=True, check=True)
+        
+        # Convertir la salida a un objeto BytesIO
+        img_buffer = io.BytesIO(result.stdout)
+        
         yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + stream.getvalue() + b'\r\n')
+               b'Content-Type: image/jpeg\r\n\r\n' + img_buffer.getvalue() + b'\r\n')
+        
         time.sleep(0.1)
