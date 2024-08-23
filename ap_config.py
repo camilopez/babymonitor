@@ -22,6 +22,8 @@ wpa_key_mgmt=WPA-PSK
 wpa_pairwise=TKIP
 rsn_pairwise=CCMP
 '''
+    # Asegurar que el directorio existe
+    subprocess.run(['sudo', 'mkdir', '-p', '/etc/hostapd'], check=True)
     subprocess.run(['sudo', 'bash', '-c', f'echo "{hostapd_conf}" > /etc/hostapd/hostapd.conf'], check=True)
 
     # Configurar dnsmasq
@@ -36,9 +38,25 @@ dhcp-range=192.168.4.2,192.168.4.20,255.255.255.0,24h
 
     # Aplicar cambios
     subprocess.run(['sudo', 'sysctl', '-p'], check=True)
+    
+    # Verificar si hostapd está instalado
+    if subprocess.run(['which', 'hostapd'], capture_output=True).returncode != 0:
+        print("hostapd no está instalado. Instalando...")
+        subprocess.run(['sudo', 'apt', 'update'], check=True)
+        subprocess.run(['sudo', 'apt', 'install', '-y', 'hostapd'], check=True)
+    
     subprocess.run(['sudo', 'systemctl', 'unmask', 'hostapd'], check=True)
     subprocess.run(['sudo', 'systemctl', 'enable', 'hostapd'], check=True)
+    
+    # Verificar si dnsmasq está instalado
+    if subprocess.run(['which', 'dnsmasq'], capture_output=True).returncode != 0:
+        print("dnsmasq no está instalado. Instalando...")
+        subprocess.run(['sudo', 'apt', 'update'], check=True)
+        subprocess.run(['sudo', 'apt', 'install', '-y', 'dnsmasq'], check=True)
+    
     subprocess.run(['sudo', 'systemctl', 'enable', 'dnsmasq'], check=True)
+
+# Las funciones start_ap, stop_ap y check_wifi_connection permanecen sin cambios
 
 def start_ap():
     subprocess.run(['sudo', 'systemctl', 'start', 'hostapd'], check=True)
