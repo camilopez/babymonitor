@@ -65,6 +65,6 @@ if __name__ == '__main__':
     setup_ap()  # Configurar el punto de acceso
     network_thread = threading.Thread(target=check_and_switch_network)
     network_thread.start()
-    start_camera_stream()  # Iniciar el stream de la cámara
+    #start_camera_stream()  # Iniciar el stream de la cámara
     socketio.run(app, host='0.0.0.0', port=8080, debug=True)
-    stop_camera_stream()  # Detener el stream de la cámara cuando la aplicación se cierre
+    #stop_camera_stream()  # Detener el stream de la cámara cuando la aplicación se cierre
