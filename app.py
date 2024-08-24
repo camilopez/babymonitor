@@ -3,9 +3,13 @@ from flask_socketio import SocketIO
 import subprocess
 import threading
 import time
+import logging
 from ap_config import setup_ap, start_ap, stop_ap, check_wifi_connection
 from camera_stream import generate_frames
 
+# Configuración de logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -35,6 +39,7 @@ def wifi_config():
 
 @app.route('/video_feed')
 def video_feed():
+    logger.debug("Iniciando video_feed")
     return Response(generate_frames(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
@@ -61,10 +66,22 @@ def check_and_switch_network():
             start_ap()
         time.sleep(60)  # Comprueba cada minuto
 
+def start_camera():
+    logger.debug("Iniciando cámara")
+    # Aquí puedes agregar cualquier inicialización necesaria para la cámara
+
+def stop_camera():
+    logger.debug("Deteniendo cámara")
+    # Aquí puedes agregar cualquier limpieza necesaria para la cámara
+
 if __name__ == '__main__':
+    logger.info("Iniciando aplicación")
     setup_ap()  # Configurar el punto de acceso
     network_thread = threading.Thread(target=check_and_switch_network)
     network_thread.start()
-    #start_camera_stream()  # Iniciar el stream de la cámara
-    socketio.run(app, host='0.0.0.0', port=8080, debug=True)
-    #stop_camera_stream()  # Detener el stream de la cámara cuando la aplicación se cierre
+    start_camera()  # Inicializar la cámara
+    try:
+        socketio.run(app, host='0.0.0.0', port=8080, debug=True)
+    finally:
+        stop_camera()  # Asegurarse de que la cámara se detenga al cerrar la aplicación
+        logger.info("Aplicación terminada")

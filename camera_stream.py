@@ -1,9 +1,8 @@
-import logging
-
-logging.basicConfig(level=logging.DEBUG)
+import subprocess
+import time
+import io
 
 def generate_frames():
-    logging.debug("Iniciando generate_frames")
     cmd = [
         'libcamera-vid',
         '-t', '0',
@@ -15,21 +14,25 @@ def generate_frames():
         '-o', '-'
     ]
     
-    logging.debug(f"Ejecutando comando: {' '.join(cmd)}")
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
     try:
         while True:
-            frame = process.stdout.read(65536)
-            if not frame:
-                logging.debug("No se leyeron datos del subproceso")
+            # Leer los primeros 4 bytes para obtener el tamaño del frame
+            frame_size_bytes = process.stdout.read(4)
+            if not frame_size_bytes:
                 break
-            logging.debug(f"Leído frame de {len(frame)} bytes")
+            frame_size = int.from_bytes(frame_size_bytes, 'little')
+            
+            # Leer el frame completo
+            frame_data = process.stdout.read(frame_size)
+            if not frame_data:
+                break
+            
+            # Crear un objeto BytesIO para el frame
+            frame = io.BytesIO(frame_data)
+            
             yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-            time.sleep(0.01)
-    except Exception as e:
-        logging.error(f"Error en generate_frames: {e}")
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame.getvalue() + b'\r\n')
     finally:
-        logging.debug("Terminando subproceso de la cámara")
         process.terminate()
