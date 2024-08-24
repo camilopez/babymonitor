@@ -6,41 +6,42 @@ import threading
 def generate_frames():
     cmd = [
         'libcamera-vid',
-        '-t', '0',  # Tiempo infinito
-        '--inline',  # Frames H264 completos
+        '-t', '0',
+        '--inline',
         '--width', '640',
         '--height', '480',
-        '--framerate', '30',
+        '--framerate', '15',  # Reducido a 15 fps
         '--codec', 'mjpeg',
-        '-o', '-'  # Salida a stdout
+        '-o', '-'
     ]
     
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
     try:
-        data = b''
         while True:
-            chunk = process.stdout.read(4096)  # Leer en bloques de 4096 bytes
-            if not chunk:
+            # Leer el tamaño del frame (4 bytes)
+            frame_size_bytes = process.stdout.read(4)
+            if not frame_size_bytes:
                 break
-            data += chunk
-            # Buscamos el delimitador de frame para generar cada imagen completa
-            while b'\xff\xd9' in data:  # Marca de fin de JPEG
-                frame_end = data.index(b'\xff\xd9') + 2
-                frame = data[:frame_end]
-                data = data[frame_end:]
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            frame_size = int.from_bytes(frame_size_bytes, byteorder='little')
+            
+            # Leer el frame completo
+            frame = process.stdout.read(frame_size)
+            if not frame:
+                break
+            
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
     finally:
         process.terminate()
-
 
 def start_camera_stream():
     global camera_thread
     camera_thread = threading.Thread(target=generate_frames)
+    camera_thread.daemon = True  # Hacer el hilo un demonio
     camera_thread.start()
 
 def stop_camera_stream():
     global camera_thread
     if camera_thread:
-        camera_thread.join()
+        camera_thread.join(timeout=1)  # Esperar máximo 1 segundo
