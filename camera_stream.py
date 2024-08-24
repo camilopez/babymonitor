@@ -1,38 +1,46 @@
-import subprocess
-import time
 import io
-import logging
-
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+import time
+import subprocess
+import threading
 
 def generate_frames():
-    logger.debug("Iniciando generate_frames")
     cmd = [
-        'raspivid',
-        '-t', '0',
-        '-o', '-',
-        '-w', '640',
-        '-h', '480',
-        '-fps', '15',
-        '-pf', 'baseline'
+        'libcamera-vid',
+        '-t', '0',  # Tiempo infinito
+        '--inline',  # Frames H264 completos
+        '--width', '640',
+        '--height', '480',
+        '--framerate', '15',
+        '--codec', 'mjpeg',
+        '-o', '-'  # Salida a stdout
     ]
     
-    logger.debug(f"Ejecutando comando: {' '.join(cmd)}")
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
     try:
+        data = b''
         while True:
-            # Leer un chunk fijo de datos
-            chunk = process.stdout.read(4096)
+            chunk = process.stdout.read(4096)  # Leer en bloques de 4096 bytes
             if not chunk:
-                logger.debug("No se pudo leer datos del proceso")
                 break
-            
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + chunk + b'\r\n')
-    except Exception as e:
-        logger.error(f"Error en generate_frames: {e}")
+            data += chunk
+            # Buscamos el delimitador de frame para generar cada imagen completa
+            while b'\xff\xd9' in data:  # Marca de fin de JPEG
+                frame_end = data.index(b'\xff\xd9') + 2
+                frame = data[:frame_end]
+                data = data[frame_end:]
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
     finally:
-        logger.debug("Terminando subproceso de la cámara")
         process.terminate()
+
+
+def start_camera_stream():
+    global camera_thread
+    camera_thread = threading.Thread(target=generate_frames)
+    camera_thread.start()
+
+def stop_camera_stream():
+    global camera_thread
+    if camera_thread:
+        camera_thread.join()
