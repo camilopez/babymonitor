@@ -5,7 +5,7 @@ import threading
 import time
 import logging
 from ap_config import setup_ap, start_ap, stop_ap, check_wifi_connection
-from camera_stream import generate_frames
+from camera_stream import generate_frames, start_camera_stream, stop_camera_stream
 
 # Configuración de logging
 logging.basicConfig(level=logging.DEBUG)
