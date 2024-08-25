@@ -68,11 +68,11 @@ def check_and_switch_network():
 
 def start_camera():
     logger.debug("Iniciando cámara")
-    # Aquí puedes agregar cualquier inicialización necesaria para la cámara
+    start_camera_stream()
 
 def stop_camera():
     logger.debug("Deteniendo cámara")
-    # Aquí puedes agregar cualquier limpieza necesaria para la cámara
+    stop_camera_stream()
 
 if __name__ == '__main__':
     logger.info("Iniciando aplicación")
