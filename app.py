@@ -76,12 +76,14 @@ def stop_camera():
 
 if __name__ == '__main__':
     logger.info("Iniciando aplicación")
-    setup_ap()  # Configurar el punto de acceso
+    setup_ap()
     network_thread = threading.Thread(target=check_and_switch_network)
     network_thread.start()
-    start_camera()  # Inicializar la cámara
+    start_camera()
     try:
-        socketio.run(app, host='0.0.0.0', port=8080, debug=True)
+        socketio.run(app, host='0.0.0.0', port=8080, allow_unsafe_werkzeug=True)
+    except Exception as e:
+        logger.error(f"Error al iniciar la aplicación: {e}")
     finally:
-        stop_camera()  # Asegurarse de que la cámara se detenga al cerrar la aplicación
+        stop_camera()
         logger.info("Aplicación terminada")
