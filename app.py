@@ -12,7 +12,18 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='threading')
+
+# Reducir la frecuencia de verificación de la red
+CHECK_NETWORK_INTERVAL = 300  # 5 minutos
+
+def check_and_switch_network():
+    while True:
+        if check_wifi_connection():
+            stop_ap()
+        else:
+            start_ap()
+        time.sleep(CHECK_NETWORK_INTERVAL)
 
 @app.route('/')
 def index():
@@ -58,14 +69,6 @@ network={{
         f.write(config)
     subprocess.call(['sudo', 'wpa_cli', '-i', 'wlan0', 'reconfigure'])
 
-def check_and_switch_network():
-    while True:
-        if check_wifi_connection():
-            stop_ap()
-        else:
-            start_ap()
-        time.sleep(60)  # Comprueba cada minuto
-
 def start_camera():
     logger.debug("Iniciando cámara")
     start_camera_stream()
@@ -78,10 +81,12 @@ if __name__ == '__main__':
     logger.info("Iniciando aplicación")
     setup_ap()
     network_thread = threading.Thread(target=check_and_switch_network)
+    network_thread.daemon = True  # Hacer que el hilo sea un demonio    
     network_thread.start()
     start_camera()
     try:
-        socketio.run(app, host='0.0.0.0', port=8080, allow_unsafe_werkzeug=True)
+        #socketio.run(app, host='0.0.0.0', port=8080, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=8080)
     except Exception as e:
         logger.error(f"Error al iniciar la aplicación: {e}")
     finally:
